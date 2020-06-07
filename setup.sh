@@ -5,9 +5,9 @@ CUDAROOT=/usr/local/cuda/
 module load gcc/7.4.0
 # module load gcc/4.8.5
 
-export PATH=`pwd -r`/contrib/bin:${PATH}
-export INCLUDE=`pwd -r`/contrib/include:${INCLUDE}
-export LD_LIBRARY_PATH=`pwd -r`/contrib/lib64:`pwd -r`/contrib/lib:${LD_LIBRARY_PATH}
+export PATH=./contrib/bin:${PATH}
+export INCLUDE=./contrib/include:${INCLUDE}
+export LD_LIBRARY_PATH=./contrib/lib64:./contrib/lib:${LD_LIBRARY_PATH}
 
 
 # export PATH=${HOME}/.local/gcc-4.9.2/bin:${PATH}

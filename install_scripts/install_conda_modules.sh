@@ -1,6 +1,6 @@
 #!/bin/bash
 
 source ./setup.sh
-conda install cmake
-conda install -c conda-forge sox
-conda install -c conda-forge ffmpeg
+conda install -y cmake
+conda install -y -c conda-forge sox
+conda install -y -c conda-forge ffmpeg

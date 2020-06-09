@@ -1,10 +1,11 @@
 #!/bin/bash
 
+source ./setup.sh
 NUM_CPU=20
 
 # ./ci/install_kaldi.sh
 
-cd tool
+cd tools
 git clone https://github.com/kaldi-asr/kaldi
 
 cd kaldi/tools

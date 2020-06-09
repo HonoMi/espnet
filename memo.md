@@ -1,4 +1,5 @@
 # todo
+* paste-feats
 * まずan4で動かしてみる．
     - いや，librispeechだとbpeになっている．そこに違いがある．
 * huggungfaceのdictを読み込ませることができるか．

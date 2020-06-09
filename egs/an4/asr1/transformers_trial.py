@@ -54,6 +54,8 @@ def main(model):
         model = BertModel.from_pretrained('bert-base-uncased')
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
+    import pudb; pudb.set_trace()
+
     token2id = tokenizer.get_vocab()
     id2token = {value: key for key, value in token2id.items()}
     text = 'Here is some text to encode.'

@@ -32,6 +32,17 @@ def get_parser():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
+        "--transformer-model-type",
+        default=None,
+        choices=['gpt2'],
+    )
+    parser.add_argument(
+        "--transformer-model",
+        default=None,
+        choices=['gpt2', 'gpt2-medium', 'gpt2-large', 'gpt2-xl'],
+    )
+
+    parser.add_argument(
         "--nchar",
         "-n",
         default=1,

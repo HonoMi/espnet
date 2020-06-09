@@ -4,6 +4,7 @@
 * huggungfaceのdictを読み込ませることができるか．
     - まず，動かしてみて，dictの形式を見てみる．
 * LM_interfaceの実装
+* transformers_trial.pyをtransformers-extraに移動する．
 
 ## 変更点
 * dict/data.jsonsの作成

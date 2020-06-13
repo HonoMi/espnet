@@ -1,4 +1,11 @@
 # todo
+* [state] ./egs/an4/asr1/run.sh gpt2でstage3までは通るようになった．
+* an4/run.sh <unk>周りが怪しい
+    ```
+    ### Task dependent. You have to check non-linguistic symbols used in the corpus.
+    echo "<unk> 1" > ${dict} # <unk> must be 1, 0 will be used for "blank" in CTC
+    ```
+
 * paste-feats
 * まずan4で動かしてみる．
     - いや，librispeechだとbpeになっている．そこに違いがある．

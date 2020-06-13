@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 # Copyright 2017 Johns Hopkins University (Shinji Watanabe)
 #  Apache 2.0  (http://www.apache.org/licenses/LICENSE-2.0)
 
@@ -25,12 +27,20 @@ lm_config=conf/lm.yaml
 decode_config=conf/decode_ctcweight1.0.yaml
 
 # rnnlm related
-use_wordlm=true     # false means to train/use a character LM
+# use_wordlm=true     # false means to train/use a character LM
+use_wordlm=false     # false means to train/use a character LM
 lm_vocabsize=100    # effective only for word LMs
 lmtag=              # tag for managing LMs
 lm_resume=          # specify a snapshot file to resume LM training
-transformer_model_type=
-transformer_model=
+
+lm_model_module=gpt2
+transformer_model_type=gpt2    # "" if you do not use pre-trained transformer language models.
+transformer_model_name_or_path=gpt2
+if [ ! "${transformer_model_type}" = "" ]; then
+    transformer_opt="--transformer_tokenizer_type ${transformer_model_type} --transformer_tokenizer_name_or_path ${transformer_model_name_or_path}"
+else
+    transformer_opt=""
+fi
 
 # decoding parameter
 recog_model=model.loss.best # set a model to be used for decoding: 'model.acc.best' or 'model.loss.best'
@@ -122,22 +132,37 @@ dict=data/lang_1char/${train_set}_units.txt
 echo "dictionary: ${dict}"
 if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
     echo "stage 2: Dictionary and Json Data Preparation"
-
-    ### Task dependent. You have to check non-linguistic symbols used in the corpus.
     mkdir -p data/lang_1char/
-    echo "<unk> 1" > ${dict} # <unk> must be 1, 0 will be used for "blank" in CTC
-    text2token.py -s 1 -n 1 data/${train_set}/text | cut -f 2- -d" " | tr " " "\n" \
-    | sort | uniq | grep -v -e '^\s*$' | awk '{print $0 " " NR+1}' >> ${dict}
-    wc -l ${dict}
+    if [ ! "${transformer_model_type}" = "" ]; then
+        echo "Building vocabrary.."
+
+        if [ ! "${transformer_model_type}" = "" ]; then
+            dump_transformer_opt="--tokenizer_type ${transformer_model_type} --tokenizer_name_or_path ${transformer_model_name_or_path}"
+        else
+            dump_transformer_opt=""
+        fi
+
+        dump_transformers_vocab.py\
+            --output ${dict} ${dump_transformer_opt}
+    else
+        ### Task dependent. You have to check non-linguistic symbols used in the corpus.
+        echo "<unk> 1" > ${dict} # <unk> must be 1, 0 will be used for "blank" in CTC
+        text2token.py -s 1 -n 1 data/${train_set}/text | cut -f 2- -d" " | tr " " "\n" \
+        | sort | uniq | grep -v -e '^\s*$' | awk '{print $0 " " NR+1}' >> ${dict}
+        wc -l ${dict}
+    fi
 
     # make json labels
     data2json.sh --feat ${feat_tr_dir}/feats.scp \
+         ${transformer_opt} \
          data/${train_set} ${dict} > ${feat_tr_dir}/data.json
     data2json.sh --feat ${feat_dt_dir}/feats.scp \
-         data/${train_dev} ${dict} > ${feat_dt_dir}/data.json
+         ${transformer_opt} \
+         data/${train_dev} ${dict}  > ${feat_dt_dir}/data.json
     for rtask in ${recog_set}; do
         feat_recog_dir=${dumpdir}/${rtask}/delta${do_delta}
         data2json.sh --feat ${feat_recog_dir}/feats.scp \
+            ${transformer_opt} \
             data/${rtask} ${dict} > ${feat_recog_dir}/data.json
     done
 fi
@@ -169,18 +194,34 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     else
         lmdatadir=data/local/lm_train
         lmdict=${dict}
+        if [ ! "${transformer_model_type}" = "" ]; then
+            no_space_opt="--no-space-tokens"
+        else
+            no_space_opt=""
+        fi
         mkdir -p ${lmdatadir}
-        text2token.py -s 1 -n 1 data/${train_set}/text \
+        text2token.py -s 1 -n 1 ${transformer_opt} ${no_space_opt} data/${train_set}/text \
             | cut -f 2- -d" " > ${lmdatadir}/train.txt
-        text2token.py -s 1 -n 1 data/${train_dev}/text \
+        text2token.py -s 1 -n 1 ${transformer_opt} ${no_space_opt} data/${train_dev}/text \
             | cut -f 2- -d" " > ${lmdatadir}/valid.txt
-        text2token.py -s 1 -n 1 data/${lm_test}/text \
+        text2token.py -s 1 -n 1 ${transformer_opt} ${no_space_opt} data/${lm_test}/text \
                 | cut -f 2- -d" " > ${lmdatadir}/test.txt
+    fi
+
+
+    if [ ! "${transformer_model_type}" = "" ]; then
+        transformers_vocab_opt="--transformers-vocab"
+        config_opt=""
+        batch_size=2
+    else
+        transformers_vocab_opt=""
+        config_opt="--config ${lm_config}"
+        batch_size=300
     fi
 
     ${cuda_cmd} --gpu ${ngpu} ${lmexpdir}/train.log \
         lm_train.py \
-        --config ${lm_config} \
+        ${config_opt} \
         --ngpu ${ngpu} \
         --backend ${backend} \
         --verbose 1 \
@@ -190,6 +231,9 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
         --valid-label ${lmdatadir}/valid.txt \
         --test-label ${lmdatadir}/test.txt \
         --resume ${lm_resume} \
+        --model-module ${lm_model_module}\
+        --batchsize ${batch_size}\
+        ${transformers_vocab_opt}\
         --dict ${lmdict}
 fi
 

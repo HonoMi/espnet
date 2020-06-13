@@ -24,6 +24,14 @@ out="" # If omitted, write in stdout
 text=""
 multilingual=false
 
+transformer_tokenizer_type=
+transformer_tokenizer_name_or_path=
+if [ ! "${transformer_tokenizer_type}" = "" ]; then
+    transformer_opt="--transformer_tokenizer_type ${transformer_tokenizer_type} --transformer_tokenizer_name_or_path ${transformer_tokenizer_name_or_path}"
+else
+    transformer_opt=""
+fi
+
 help_message=$(cat << EOF
 Usage: $0 <data-dir> <dict>
 e.g. $0 data/train data/lang_1char/train_units.txt
@@ -97,9 +105,9 @@ if [ -n "${bpecode}" ]; then
             > ${tmpdir}/output/token.scp
     fi
 elif [ -n "${nlsyms}" ]; then
-    text2token.py -s 1 -n 1 -l ${nlsyms} ${text} --trans_type ${trans_type} > ${tmpdir}/output/token.scp
+    text2token.py -s 1 -n 1 -l ${nlsyms} ${text} --trans_type ${trans_type} ${transformer_opt} > ${tmpdir}/output/token.scp
 else
-    text2token.py -s 1 -n 1 ${text} --trans_type ${trans_type} > ${tmpdir}/output/token.scp
+    text2token.py -s 1 -n 1 ${text} --trans_type ${trans_type} ${transformer_opt} > ${tmpdir}/output/token.scp
 fi
 < ${tmpdir}/output/token.scp utils/sym2int.pl --map-oov ${oov} -f 2- ${dic} > ${tmpdir}/output/tokenid.scp
 # +2 comes from CTC blank and EOS

@@ -2,10 +2,19 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE:-$0}")" > /dev/null; pwd)"
 
+# ------------- gcc -------------------
 module load gcc/7.4.0
+
+
+
+# espnet
+export PATH=${SCRIPT_DIR}/espnet/bin/:${PATH}
+
+
 
 # ------------- internal tools -------------------
 export PATH=${SCRIPT_DIR}/utils/:${SCRIPT_DIR}/kaldi/src/featbin/:${PATH}
+
 
 
 # ------------- external libraries -------------------
@@ -13,6 +22,7 @@ CONTRIB_DIR=${SCRIPT_DIR}/contrib
 export PATH=${CONTRIB_DIR}/bin:${PATH}
 export INCLUDE=${CONTRIB_DIR}/include:${INCLUDE}
 export LD_LIBRARY_PATH=${CONTRIB_DIR}/lib64:${CONTRIB_DIR}/lib:${LD_LIBRARY_PATH}
+
 
 
 # ------------- Kaldi -------------------
@@ -37,6 +47,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/$KALDI_ROOT/src/lib:$KALDI_ROOT/tools/o
 export LD_LIBRARY_PATH=$KALDI_ROOT/tools/OpenBLAS/:$LD_LIBRARY_PATH
 
 
+
 # ------------- CUDA ----------------
 module load cuda/10.0/10.0.130
 module load nccl/2.6/2.6.4-1
@@ -54,3 +65,11 @@ export NCCL_ROOT=${NCCL_HOME}
 export CPATH=${NCCL_ROOT}/include:${CPATH}
 export LD_LIBRARY_PATH=${NCCL_ROOT}/lib/:${CUDAROOT}/lib64:${LD_LIBRARY_PATH}
 export LIBRARY_PATH=${NCCL_ROOT}/lib/:${LIBRARY_PATH}
+
+
+
+
+# ----------- Morshita Specific ------------
+source $PROJECTS/transformers-extra/setup.sh
+
+

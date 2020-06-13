@@ -71,6 +71,7 @@ def get_parser(parser=None, required=True):
     )
     parser.add_argument("--debugmode", default=1, type=int, help="Debugmode")
     parser.add_argument("--dict", type=str, required=required, help="Dictionary")
+    parser.add_argument("--transformers-vocab", default=False, action='store_true')
     parser.add_argument("--seed", default=1, type=int, help="Random seed")
     parser.add_argument(
         "--resume",
@@ -260,11 +261,19 @@ def main(cmd_args):
     # load dictionary
     with open(args.dict, "rb") as f:
         dictionary = f.readlines()
-    char_list = [entry.decode("utf-8").split(" ")[0] for entry in dictionary]
-    char_list.insert(0, "<blank>")
-    char_list.append("<eos>")
-    args.char_list_dict = {x: i for i, x in enumerate(char_list)}
-    args.n_vocab = len(char_list)
+    if not args.transformers_vocab:
+        char_list = [entry.decode("utf-8").split(" ")[0] for entry in dictionary]
+        char_list.insert(0, "<blank>")  # This is "pad" token.
+        char_list.append("<eos>")
+        args.char_list_dict = {x: i for i, x in enumerate(char_list)}
+        args.n_vocab = len(char_list)
+    else:
+        args.char_list_dict = {}
+        for line in dictionary:
+            word, wordid = line.decode("utf-8").split(" ")
+            args.char_list_dict[word] = int(wordid)
+        args.n_vocab = len(args.char_list_dict)
+
 
     # train
     logging.info("backend = " + args.backend)

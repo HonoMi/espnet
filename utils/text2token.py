@@ -10,21 +10,12 @@ import argparse
 import codecs
 import re
 import sys
-
-from transformers import (
-    GPT2Model, GPT2Tokenizer,
-    # BertModel, BertTokenizer
+from espnet.transformers.tokenizers import (
+    load as load_transformer_tokenizer,
+    tokenize as transformer_tokenize,
+    is_subword_token as is_subword_token
 )
 
-MODEL_CLASSES = {
-    'gpt2': (GPT2Config, GPT2LMHeadModel, GPT2Tokenizer),
-    'gpt2': (GPT2Config, GPT2LMHeadModel, GPT2Tokenizer),
-    # "openai-gpt": (OpenAIGPTConfig, OpenAIGPTLMHeadModel, OpenAIGPTTokenizer),
-    # "bert": (BertConfig, BertForMaskedLM, BertTokenizer),
-    # "roberta": (RobertaConfig, RobertaForMaskedLM, RobertaTokenizer),
-    # "distilbert": (DistilBertConfig, DistilBertForMaskedLM, DistilBertTokenizer),
-    # "camembert": (CamembertConfig, CamembertForMaskedLM, CamembertTokenizer),
-}
 
 is_python2 = sys.version_info[0] == 2
 
@@ -45,16 +36,6 @@ def get_parser():
     parser = argparse.ArgumentParser(
         description="convert raw text to tokenized text",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument(
-        "--transformer-model-type",
-        default=None,
-        choices=['gpt2'],
-    )
-    parser.add_argument(
-        "--transformer-model",
-        default='gpt2',
-        choices=['gpt2', 'gpt2-medium', 'gpt2-large', 'gpt2-xl'],
     )
 
     parser.add_argument(
@@ -91,42 +72,46 @@ def get_parser():
                         read from SI1279.PHN file -> "sil b r ih sil k s aa r er n aa l
                         sil t er n ih sil t ih v sil" """,
     )
+
+    parser.add_argument(
+        "--transformer_tokenizer_type",
+        default=None
+    )
+    parser.add_argument(
+        "--transformer_tokenizer_name_or_path",
+        default=None,
+        type=str,
+        help="Optional pretrained tokenizer name or path if not the same as model_name_or_path. If both are None, initialize a new tokenizer.",
+    )
+    parser.add_argument(
+        "--transformer_mecab_dic_dir",
+        default=None,
+    )
+    parser.add_argument(
+        "--transformer_cache_dir",
+        default=None,
+        type=str,
+        help="Optional directory to store the pre-trained models downloaded from s3 (instead of the default one)",
+    )
+
     return parser
-
-
-def is_subword_token(token: str,
-                     transformer_tokenizer):
-    if isinstance(transformer_tokenizer, GPT2Tokenizer):
-        # TODO: transformersに，is_subword_token()みたいな機能があれば，それを使う．
-        return token.startswith('Ġ')
-    else:
-        raise Exception(f'Unknown class "{transformer_tokenizer.__class__.__name__}"')
-
-
-def transformer_tokenize(text: str,
-                         transformer_tokenizer,
-                         space_token='<space>',
-                         add_space_tokens=True):
-    tokens = []
-    for transformer_token in transformer_tokenizer.tokenize(text):
-        if add_space_tokens and transformer_token.startswith('Ġ'):
-            tokens.append(space_token)
-            tokens.append(transformer_token)
-        else:
-            tokens.append(transformer_token)
-    return tokens
 
 
 def main():
     parser = get_parser()
     args = parser.parse_args()
 
-    if args.transformer_model_type is not None:
-        if args.transformer_model_type == 'gpt2':
-            tokenizer_cls = GPT2Tokenizer
-        else:
-            raise Exception(f'Unsupported tokenizer class "{args.transformer_model_type}"')
-        transformer_tokenizer = tokenizer_cls.from_pretrained('gpt2')
+    transformer_tokenizer_type = args.transformer_tokenizer_type or None
+    transformer_tokenizer_name_or_path = args.transformer_tokenizer_name_or_path or None
+    with open('log.text2token.txt', 'w') as f:
+        print('text2token:', transformer_tokenizer_type, file=f)
+        print('text2token:', transformer_tokenizer_name_or_path, file=f)
+    if transformer_tokenizer_type is not None:
+        transformer_tokenizer = load_transformer_tokenizer(
+            transformer_tokenizer_type,
+            name_or_path=transformer_tokenizer_name_or_path,
+            mecab_dic_dir=args.transformer_mecab_dic_dir,
+            cache_dir=args.transformer_cache_dir)
     else:
         transformer_tokenizer = None
 
@@ -197,7 +182,7 @@ def main():
             if args.trans_type == "phn":
                 a_chars = [z.replace("sil", space_token) for z in a_chars]
             print(" ".join(a_chars))
-            line = f.readline()
+        line = f.readline()
 
 
 if __name__ == "__main__":

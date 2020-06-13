@@ -1,1 +1,2 @@
 transformers
+transformers_extra@git+https://github.com/HonoMi/transformers-extra.git@master

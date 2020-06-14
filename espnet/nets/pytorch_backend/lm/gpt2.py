@@ -1,4 +1,6 @@
-"""Sequential implementation of Recurrent Neural Network Language Model."""
+from typing import Any
+from typing import List
+from typing import Tuple
 
 import torch
 
@@ -6,9 +8,10 @@ from espnet.nets.lm_interface import LMInterface
 
 from espnet.transformers import loaders
 from espnet.transformers import tokenizers
+from espnet.nets.scorer_interface import BatchScorerInterface
 
 
-class GPT2(LMInterface, torch.nn.Module):
+class GPT2(BatchScorerInterface, LMInterface, torch.nn.Module):
     """Sequential RNNLM.
 
     See also:
@@ -194,3 +197,58 @@ class GPT2(LMInterface, torch.nn.Module):
         # 50257
 
         return loss, loss * count, count
+
+
+    # batch beam search API (see BatchScorerInterface)
+    def batch_score(
+        self, ys: torch.Tensor, states: List[Any], xs: torch.Tensor
+    ) -> Tuple[torch.Tensor, List[Any]]:
+        # """Score new token batch.
+        # import pudb; pudb.set_trace()
+        with open('out.txt', 'w') as f:
+            print('xs', xs, file=f)  # real valued. トークンの確率？
+            print('xs.shape', xs.shape, file=f)
+            print('ys', ys, file=f)
+            print('ys', ys.shape, file=f)
+
+        # Args:
+        #     ys (torch.Tensor): torch.int64 prefix tokens (n_batch, ylen).
+        #     states (List[Any]): Scorer states for prefix tokens.
+        #     xs (torch.Tensor):
+        #         The encoder feature that generates ys (n_batch, xlen, n_feat).
+
+        # Returns:
+        #     tuple[torch.Tensor, List[Any]]: Tuple of
+        #         batchfied scores for next token with shape of `(n_batch, n_vocab)`
+        #         and next state list for ys.
+
+        # """
+        # # merge states
+        # n_batch = len(ys)
+        # n_layers = self.model.predictor.n_layers
+        # if self.model.predictor.typ == "lstm":
+        #     keys = ("c", "h")
+        # else:
+        #     keys = ("h",)
+
+        # if states[0] is None:
+        #     states = None
+        # else:
+        #     # transpose state of [batch, key, layer] into [key, layer, batch]
+        #     states = {
+        #         k: [
+        #             torch.stack([states[b][k][i] for b in range(n_batch)])
+        #             for i in range(n_layers)
+        #         ]
+        #         for k in keys
+        #     }
+        # states, logp = self.model.predict(states, ys[:, -1])
+
+        # # transpose state of [key, layer, batch] into [batch, key, layer]
+        # return (
+        #     logp,
+        #     [
+        #         {k: [states[k][i][b] for i in range(n_layers)] for k in keys}
+        #         for b in range(n_batch)
+        #     ],
+        # )

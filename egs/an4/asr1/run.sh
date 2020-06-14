@@ -176,7 +176,11 @@ if [ -z ${lmtag} ]; then
         lmtag=${lmtag}_word${lm_vocabsize}
     fi
 fi
-lmexpname=train_rnnlm_${backend}_${lmtag}
+if [ ! "${transformer_model_type}" = "" ]; then
+    lmexpname=train_transformers_${backend}_${lmtag}
+else
+    lmexpname=train_rnnlm_${backend}_${lmtag}
+fi
 lmexpdir=exp/${lmexpname}
 mkdir -p ${lmexpdir}
 
@@ -289,6 +293,12 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
         #### use CPU for decoding
         ngpu=0
 
+        if [ ! "${transformer_model_type}" = "" ]; then
+            api_version_opt="--api v2"
+        else
+            api_version_opt=""
+        fi
+
         ${decode_cmd} JOB=1:${nj} ${expdir}/${decode_dir}/log/decode.JOB.log \
             asr_recog.py \
             --config ${decode_config} \
@@ -299,6 +309,7 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
             --recog-json ${feat_recog_dir}/split${nj}utt/data.JOB.json \
             --result-label ${expdir}/${decode_dir}/data.JOB.json \
             --model ${expdir}/results/${recog_model} \
+            ${api_version_opt}\
             ${recog_opts}
 
         score_sclite.sh ${expdir}/${decode_dir} ${dict}

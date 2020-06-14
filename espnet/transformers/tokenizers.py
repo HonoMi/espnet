@@ -18,7 +18,10 @@ def map_token_id(espnet_id: int,
     vocab = tokenizer.get_vocab()
 
     if espnet_id in ESPNET_PAD_IDs:
-        return tokenizer.pad_token_id or 0
+        if tokenizer.pad_token is not None:
+            return tokenizer.pad_token_id
+        else:
+            return 0
 
     if espnet_id == vocab[ESPNET_UNK_TOKEN]:
         return tokenizer.unk_token_id
